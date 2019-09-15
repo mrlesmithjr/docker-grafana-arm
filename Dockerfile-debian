@@ -1,0 +1,21 @@
+FROM arm32v7/debian
+
+LABEL maintainer="mrlesmithjr@gmail.com"
+
+ENV GRAFANA_VERSION=6.3.5 GRAFANA_HOME=/usr/share/grafana GRAFANA_CONFIG_DIR=/etc/grafana
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends curl ca-certificates libfontconfig && \
+  curl -k -sSLO https://dl.grafana.com/oss/release/grafana_${GRAFANA_VERSION}_armhf.deb && \
+  dpkg -i grafana_${GRAFANA_VERSION}_armhf.deb && \
+  rm grafana_${GRAFANA_VERSION}_armhf.deb
+
+COPY conf/grafana.ini ${GRAFANA_CONFIG_DIR}/grafana.ini
+COPY conf/provisioning/dashboards/* ${GRAFANA_CONFIG_DIR}/provisioning/dashboards/
+COPY conf/provisioning/datasources/* ${GRAFANA_CONFIG_DIR}/provisioning/datasources/
+
+VOLUME ["/etc/grafana", "/etc/grafana/provisioning/dashboards", "/etc/grafana/provisioning/datasources"]
+
+CMD ["/usr/sbin/grafana-server", "--homepath", "/usr/share/grafana", "--config", "/etc/grafana/grafana.ini" ]
+
+EXPOSE 3000
