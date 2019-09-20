@@ -1,24 +1,31 @@
----
 sudo: true
 dist: xenial
-
 language: minimal
-
 services:
   - docker
-
 addons:
   apt:
     packages:
-      - docker-ce # use experimental features
-
-# install qemu-user before running docker build
+      - docker-ce
 before_install:
   - sudo docker run --privileged linuxkit/binfmt:v0.6
-  - sudo docker run -d --privileged -p 1234:1234 --name buildkit moby/buildkit:latest --addr tcp://0.0.0.0:1234 --oci-worker-platform linux/amd64 --oci-worker-platform linux/armhf --oci-worker-platform linux/arm64
+  - sudo docker run -d --privileged -p 1234:1234 --name buildkit moby/buildkit:latest
+    --addr tcp://0.0.0.0:1234 --oci-worker-platform linux/amd64 --oci-worker-platform
+    linux/armhf --oci-worker-platform linux/arm64
   - sudo docker cp buildkit:/usr/bin/buildctl /usr/bin/
   - export BUILDKIT_HOST=tcp://0.0.0.0:1234
-
 script:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker build -f Dockerfile-debian -t mrlesmithjr/grafana-arm:debian .
   - docker build -f Dockerfile-ubuntu -t mrlesmithjr/grafana-arm:ubuntu .
+  - docker push mrlesmithjr/grafana-arm:debian
+  - docker push mrlesmithjr/grafana-arm:ubuntu
+  - docker manifest create \
+    mrlesmithjr/grafana-arm \
+    mrlesmithjr/grafana-arm:ubuntu \
+    mrlesmithjr/grafana-arm:debian
+  - docker manifest push mrlesmithjr/grafana-arm
+env:
+  matrix:
+    - secure: k8Y4Gmockb0Y0Gd3//5afaA7PFbJ5YXYOWPytrMqIWQF6Vyg3/OG6nOkHMqZMCXqO2EHsua4QeaTFoCwl0T2SdJTi8cyo3kV2r9XXHrfjLUn47LRWQSwbANqYxcDd2PvE/sWEKKpCIPvp5JD7wRaExwa+fp4tXamOTOY8tokNyDBe1eRmjbMO5Mwg4ETfrrSTkL/j/jg9xyhpdr21nxW0XnUVvyiKLh+w36eIswygPOXzfp0VTeyP7qPUWzTZ6Bqzq8zDjDqz8ESb8Kn0B6y8h689PSLd7uDTEzM4eByk5wpmhCrM2Tq9VYT2hgZC2d1nmv0itDgOxgv5ngNW0FBQYYSB9IJ8zGT7hiR7w0EuI2srB2dG8Y3hnwVkOhF0D/CNIC+25g4To1cjlXN/isKsTC5BM1vsNirz+NnSdQAC5h9WbeK2MfxEk6rS4Gg0ZsfploJ9l7+KrkI6gQftP2YDkmpbTTp4ySemF26yASqehXueqoCz2EYf+TRYCGmjQSyxrbOoW5gzzlhiKZlBCmSBqfPoVeskz4TY/Krg/RB5D22OnevwDHlxMmyxKovvN67VYa3izJO7GR33OtkWjx39PoBggHOaRuwPb3Zg4/6WtteiA/GrL1JuabqICmaDs029ZU1fTLcbxV1dXq/otzm3x0GLdC/giB7FJODA2snEAU=
+    - secure: uULs+9M7ultKtWhekhC2OeZ+O+WJef7d1WA4WJu+93qw0ak9X1U+VBCqV+UXL+Q45Y9C6wTuPc5w6CTdFNfy6YFlGh7DXkNdtvOEw5wwYdEY00ICH/GNI9mh5Jx3BYs63H5t58b5bbduJk3OnsevZh6Cwrl/TTvCow2bkIZwYjF7FofLX2C8UfdTsLw/uTa/c95iXbUe1n32z7OZC9ePvOGFThEh9SgZ18KdC9bysjr6ayr2JsYBGyI4s5ot9s0Zl2oGohE73xiwlTBEI5S3rK6OQBaQlylwnqOlrMOcWjfamBtM+GG5bpS1HH24HL3tqk+1fOZYD/KqLZDiRkiCFlPm7B2z1V9ndzQTMmTK24RjL3NXBMkXd+UZQ/LK58jLARdIpGifJ1rlqfKcI/+EitmdyH9x/Pm2awuABbrOAPXq147EqF71E5Vl7VMOIN0VaB+Le4yBn6wqgrSEoBmWc065DFRSk1JGHz9aNL3BRp4e7wqR2yyyvsdu+cBzFXFpDBVDWMVREtZQKtjiw2NGR7w8ib24NPNSc5xjr3y/3dTkFzYOQsdFiuKtvroegO7dtD7v041Qu2aeL3TzEpHb26woVxQwMHtAUN+7tQxeGovX43fMEaLtE34fkWYuLvS2lq1lYEnUh2gCVQ3pHRNlEYAOsFktlnAlzOFMxzSqWZI=
