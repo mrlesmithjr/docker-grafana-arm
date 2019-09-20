@@ -1,0 +1,29 @@
+sudo: true
+dist: xenial
+language: minimal
+services:
+  - docker
+addons:
+  apt:
+    packages:
+      - docker-ce
+before_install:
+  - sudo docker run --privileged linuxkit/binfmt:v0.6
+  - sudo docker run -d --privileged -p 1234:1234 --name buildkit moby/buildkit:latest
+    --addr tcp://0.0.0.0:1234 --oci-worker-platform linux/amd64 --oci-worker-platform
+    linux/armhf --oci-worker-platform linux/arm64
+  - sudo docker cp buildkit:/usr/bin/buildctl /usr/bin/
+  - export BUILDKIT_HOST=tcp://0.0.0.0:1234
+script:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -f Dockerfile-debian -t mrlesmithjr/grafana-arm:debian .
+  - docker build -f Dockerfile-ubuntu -t mrlesmithjr/grafana-arm:ubuntu .
+  - docker push mrlesmithjr/grafana-arm:debian
+  - docker push mrlesmithjr/grafana-arm:ubuntu
+  - export DOCKER_CLI_EXPERIMENTAL=enabled
+  - docker manifest create mrlesmithjr/grafana-arm mrlesmithjr/grafana-arm:ubuntu mrlesmithjr/grafana-arm:debian
+  - docker manifest push mrlesmithjr/grafana-arm
+env:
+  global:
+    - secure: uM1yIc4poesFjdhsPD/dQ5mwKJjCQ3LWfmCVszAuiV/Xoj4VQwl/TofwwGbR+GdYfgK6lCjQ8DjpDVcCQNI3hG6ps5ADtjIv87KR5gc+OSABdpkSCHj/PJ7X7M7aSR3Nfgv42bdOjEA8udGW9rpkxttbiZkHkFS+uJpe/YGMoTLSn/yOR4F94rv3l02096Y91ylIp2jyJQKpzb52zLilA/Gis0e+01A5JooMzj31zwY+6CO+i6D7DURWxIx/pPD/+rQ+0R/ugWon4v6vmBaj4YbmANvgUsEt6ARHRtoh5RVPTPD+lPsoZqQ4oltvWoTdgrKZmSoYfupw5jebEM7RqUaoPtN86mt8dLW2ButQA72fl0obdv29zDPaJ45IVvTlgPVkuHaDy8jg46f0rxpyDwwXfIm87YC97/vWNUono2lswtPJjjS8B99kvxVJ7U6ges+zRRzwFjkc9jlAWKI3hGDB0T/AKqiMB2N5wnYDB+IBcc1BJ86VHS9xLqp3vEQ6SjHiNCGP7f8zJjeAeQpayr5dPhluI+iwN0xI78M/2YBix5jKkWjVVzAWp/TRCzUHzag2+UYLMoCSAGFgx3WsTaMCdJk/akQwe50bEH11XnhPFftJswYYyI9KRVltuWskFEzrt9KX7DccweSxYphA18mKVfoUXiaaNZDZUV6JMZg=
+    - secure: R7U9nDRcY4PTTpZsbyo9H4ELWRLDqn8uYZGFR6bSAsI1TcgxymeE5NDac+FmtZIEyOAOgBk6rmCkOjKVYly7SWuNztK8sw7GPgDNXOzVWnZnGyPeeaUtJ5nVq3Na4NYTQk1Js2qUMH1WvshF2FVpFnLIWiZpEqbQfGQb5Mfi80YrO9n85oRFVWu4p4FQ5Go5/Hjho3FiTPin0mxGLNmomjxFFbMeasajvnjSK6S93CVCXYfJcMSxBc1xt41qjLxetUFzrZ1Bc58ejyLvDTy03wCxKI4UZK6idw35tcnhclqk9CnGDmMGuDUxFtTpjPGFU/OqXPqeJphz7FsOYLtxwFg4YSOdT+2Pl9tFskElZaytOIifbupoM9FdBE8+ZrnHbsfn2ntHTV95W5EmIczq8M7koYyARbTqn0RTV44K5KXEsp+GnPZtOo6vDt2XdboRxhbbGCTHZ8PfWUiFOodRjtnr2b3978GXSHgDzN6lacbRU94wFhYFqbNfzD5aishl5LtI1rksZW+1L/8hEKqGjn9h77EjIyhJmPI8eRGQtvjzNX9AwakSLUWyTIhF+UrZBvexPXpe3bruy6GOBRi7VLomb1DeO6/lagLCIEoj3i585ES9rmYqKzeXJ7uDBsSA2zCpl4isJp3SU5HICOKY+L+E3uTCer0L4+yI/YNlZV0=
