@@ -1,14 +1,20 @@
+---
+sudo: true
+dist: xenial
+
 language: minimal
-sudo: required
+
+services:
+  - docker
+
 addons:
   apt:
     packages:
       - docker-ce # use experimental features
 
-services:
-  - docker
+# install qemu-user before running docker build
 before_install:
-  - docker --version # document the version travis is using
-  - echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
-  - mkdir -p $HOME/.docker && echo '{"experimental":"enabled"}' | tee $HOME/.docker/config.json
-  - sudo service docker restart
+  - sudo docker run --privileged linuxkit/binfmt:v0.6
+  - sudo docker run -d --privileged -p 1234:1234 --name buildkit moby/buildkit:latest --addr tcp://0.0.0.0:1234 --oci-worker-platform linux/amd64 --oci-worker-platform linux/armhf --oci-worker-platform linux/arm64
+  - sudo docker cp buildkit:/usr/bin/buildctl /usr/bin/
+  - export BUILDKIT_HOST=tcp://0.0.0.0:1234
