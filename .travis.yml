@@ -21,8 +21,7 @@ script:
   - docker push mrlesmithjr/grafana-arm:debian
   - docker push mrlesmithjr/grafana-arm:ubuntu
   - export DOCKER_CLI_EXPERIMENTAL=enabled
-  - docker manifest create \ mrlesmithjr/grafana-arm \ mrlesmithjr/grafana-arm:ubuntu
-    \ mrlesmithjr/grafana-arm:debian
+  - docker manifest create mrlesmithjr/grafana-arm mrlesmithjr/grafana-arm:ubuntu mrlesmithjr/grafana-arm:debian
   - docker manifest push mrlesmithjr/grafana-arm
 env:
   global:
